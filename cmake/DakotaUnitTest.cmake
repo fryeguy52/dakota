@@ -100,6 +100,9 @@ function(dakota_add_unit_test)
   endif()
   # Link to googletest
   target_link_libraries(${exe_target} PRIVATE GTest::gtest_main)
+  target_include_directories(${exe_target} PRIVATE
+    ${Dakota_SOURCE_DIR}/packages/external/googletest/googletest/include
+    ${Dakota_SOURCE_DIR}/packages/external/googletest/googletest)
   target_include_directories(${exe_target} PRIVATE ${Dakota_SOURCE_DIR}/packages/external/googletest/googletest/include)
 
   if(DAUT_PROPERTIES)
