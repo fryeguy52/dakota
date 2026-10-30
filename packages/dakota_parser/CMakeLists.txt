@@ -57,31 +57,36 @@ endif()
 # FetchContent for dependencies
 # =============================================================================
 include(FetchContent)
+include(DakotaSnapshotDeps)
 
 # nlohmann_json
-find_path(NLOHMANN_JSON_INCLUDE_DIR
-  NAMES nlohmann/json.hpp
-  HINTS ${NLOHMANN_JSON_ROOT}
-  PATH_SUFFIXES include
-)
-
-if(NLOHMANN_JSON_INCLUDE_DIR)
-  add_library(nlohmann_json INTERFACE)
-  add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
-  target_include_directories(nlohmann_json INTERFACE "${NLOHMANN_JSON_INCLUDE_DIR}")
-  message(STATUS "Found valid nlohmann_json include path: ${NLOHMANN_JSON_INCLUDE_DIR}")
+if(DAKOTA_FORCE_JSON_SNAPSHOT)
+  dakota_use_json_snapshot("${CMAKE_CURRENT_LIST_DIR}/../../external/json/include")
 else()
-  find_package(nlohmann_json 3.2.0 QUIET)
-  if(NOT nlohmann_json_FOUND)
-    message(STATUS "Fetching nlohmann_json from GitHub...")
-    FetchContent_Declare(
-      nlohmann_json
-      GIT_REPOSITORY https://github.com/nlohmann/json.git
-      GIT_TAG        v3.11.3
-      GIT_SHALLOW    TRUE
-    )
-    set(JSON_Install OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(nlohmann_json)
+  find_path(NLOHMANN_JSON_INCLUDE_DIR
+    NAMES nlohmann/json.hpp
+    HINTS ${NLOHMANN_JSON_ROOT}
+    PATH_SUFFIXES include
+  )
+
+  if(NLOHMANN_JSON_INCLUDE_DIR)
+    add_library(nlohmann_json INTERFACE)
+    add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+    target_include_directories(nlohmann_json INTERFACE "${NLOHMANN_JSON_INCLUDE_DIR}")
+    message(STATUS "Found valid nlohmann_json include path: ${NLOHMANN_JSON_INCLUDE_DIR}")
+  else()
+    find_package(nlohmann_json 3.2.0 QUIET)
+    if(NOT nlohmann_json_FOUND)
+      message(STATUS "Fetching nlohmann_json from GitHub...")
+      FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG        v3.11.3
+        GIT_SHALLOW    TRUE
+      )
+      set(JSON_Install OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(nlohmann_json)
+    endif()
   endif()
 endif()
 
@@ -131,22 +136,28 @@ if(BUILD_PYTHON_BINDINGS)
 endif()
 
 # GoogleTest (for tests)
-if(BUILD_TESTS AND NOT (TARGET gtest))
-    message(STATUS "Fetching GTest from GitHub...")
-    set(GTest_DIR "" CACHE PATH "" FORCE)
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        v1.15.2
-        GIT_SHALLOW    TRUE
-    )
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    # Save user's BUILD_SHARED_LIBS setting, force OFF for gtest, then restore
-    set(_SAVED_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
-    set(BUILD_SHARED_LIBS OFF)
-    FetchContent_MakeAvailable(googletest)
-    set(BUILD_SHARED_LIBS ${_SAVED_BUILD_SHARED_LIBS})
-    
+if(BUILD_TESTS AND NOT TARGET GTest::gtest_main)
+    if(DAKOTA_FORCE_GTEST_SNAPSHOT)
+        dakota_use_gtest_snapshot(
+            "${CMAKE_CURRENT_LIST_DIR}/../../external/googletest"
+            "${CMAKE_CURRENT_BINARY_DIR}/googletest")
+    else()
+        message(STATUS "Fetching GTest from GitHub...")
+        set(GTest_DIR "" CACHE PATH "" FORCE)
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG        v1.15.2
+            GIT_SHALLOW    TRUE
+        )
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        # Save user's BUILD_SHARED_LIBS setting, force OFF for gtest, then restore
+        set(_SAVED_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+        set(BUILD_SHARED_LIBS OFF)
+        FetchContent_MakeAvailable(googletest)
+        set(BUILD_SHARED_LIBS ${_SAVED_BUILD_SHARED_LIBS})
+    endif()
+
     enable_testing()
 endif()
 

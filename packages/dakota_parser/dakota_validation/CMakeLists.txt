@@ -18,7 +18,8 @@ if(DAKOTA_VALIDATION_STANDALONE)
     option(BUILD_TESTS "Build tests" ON)
     
     include(FetchContent)
-    
+    include(DakotaSnapshotDeps)
+
     # ==========================================================================
     # Dependencies for standalone build
     # ==========================================================================
@@ -47,20 +48,25 @@ if(DAKOTA_VALIDATION_STANDALONE)
     endif()
     
     # nlohmann_json
-    find_package(nlohmann_json 3.2.0 QUIET)
-    if(NOT nlohmann_json_FOUND)
-        message(STATUS "Fetching nlohmann_json...")
-        FetchContent_Declare(
-            nlohmann_json
-            GIT_REPOSITORY https://github.com/nlohmann/json.git
-            GIT_TAG        v3.11.3
-            GIT_SHALLOW    TRUE
-        )
-        set(JSON_Install OFF CACHE BOOL "" FORCE)
-        FetchContent_MakeAvailable(nlohmann_json)
+    if(DAKOTA_FORCE_JSON_SNAPSHOT)
+        dakota_use_json_snapshot("${CMAKE_CURRENT_LIST_DIR}/../../../external/json/include")
         set(NLOHMANN_JSON_FETCHED TRUE)
     else()
-        set(NLOHMANN_JSON_FETCHED FALSE)
+        find_package(nlohmann_json 3.2.0 QUIET)
+        if(NOT nlohmann_json_FOUND)
+            message(STATUS "Fetching nlohmann_json...")
+            FetchContent_Declare(
+                nlohmann_json
+                GIT_REPOSITORY https://github.com/nlohmann/json.git
+                GIT_TAG        v3.11.3
+                GIT_SHALLOW    TRUE
+            )
+            set(JSON_Install OFF CACHE BOOL "" FORCE)
+            FetchContent_MakeAvailable(nlohmann_json)
+            set(NLOHMANN_JSON_FETCHED TRUE)
+        else()
+            set(NLOHMANN_JSON_FETCHED FALSE)
+        endif()
     endif()
     
     # pybind11
@@ -102,17 +108,23 @@ if(DAKOTA_VALIDATION_STANDALONE)
     endif()
     
     # GoogleTest
-    if(BUILD_TESTS)
-        message(STATUS "Fetching GoogleTest...")
-        FetchContent_Declare(
-            googletest
-            GIT_REPOSITORY https://github.com/google/googletest.git
-            GIT_TAG        v1.15.2
-            GIT_SHALLOW    TRUE
-        )
-        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-        FetchContent_MakeAvailable(googletest)
+    if(BUILD_TESTS AND NOT TARGET GTest::gtest_main)
+        if(DAKOTA_FORCE_GTEST_SNAPSHOT)
+            dakota_use_gtest_snapshot(
+                "${CMAKE_CURRENT_LIST_DIR}/../../../external/googletest"
+                "${CMAKE_CURRENT_BINARY_DIR}/googletest")
+        else()
+            message(STATUS "Fetching GoogleTest...")
+            FetchContent_Declare(
+                googletest
+                GIT_REPOSITORY https://github.com/google/googletest.git
+                GIT_TAG        v1.15.2
+                GIT_SHALLOW    TRUE
+            )
+            set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+            set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+            FetchContent_MakeAvailable(googletest)
+        endif()
         enable_testing()
     endif()
     

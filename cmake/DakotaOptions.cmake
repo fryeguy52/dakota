@@ -31,6 +31,10 @@ endif()
 
 # Testing options
 option(DAKOTA_ENABLE_TESTS "Enable Dakota-specific tests?" ON)
+option(DAKOTA_FORCE_GTEST_SNAPSHOT
+  "Force Dakota snapshot GoogleTest sources instead of discovery or download" OFF)
+option(DAKOTA_FORCE_JSON_SNAPSHOT
+  "Force Dakota snapshot nlohmann/json headers instead of discovery or download" OFF)
 # Option to turn off key DAKOTA TPL tests, default OFF
 # Needs to go before adding the packages subdirectory
 option(DAKOTA_ENABLE_TPL_TESTS "Enable DAKOTA TPL tests?" OFF)
